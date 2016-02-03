@@ -1,6 +1,5 @@
-# archiver
-Basic taget -> destination backup script
-
+# archiveBasic taget -> destination backup script
+Basic USEAGE -> destination backup script
 
 USEAGE:
 ./archive.rb [options]
