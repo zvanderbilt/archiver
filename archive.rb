@@ -97,13 +97,13 @@ begin
     puts "using the following compression type: #{options[:compression]}"
     sleep 2
     puts "Compressing!"
-    sleep 5
     `tar cvf#{options[:switch]} #{options[:name]} #{options[:target]}`
 	`mv #{options[:name]} #{options[:dest]}`
     sleep 2
     deflated = "#{options[:dest]}#{options[:name]}"
     puts "Finished! Checking if #{deflated} exists..."
-    puts File.exists?("#{deflated}") 
+    thetruth = File.exists?("#{deflated}")
+    puts "The existence of #{deflated} is #{thetruth}"    
     puts `file #{deflated}`
 
 rescue => e
