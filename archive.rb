@@ -15,7 +15,7 @@ def self.parse(args)
     # We set default values here.
     options = { 
        compression: "gz", 
-       target: Dir.pwd + "/nil", 
+     #  target: Dir.pwd + "/nil", 
        dest: "~/",
        name: "backup.tar.compressed", # canned name, come up with better solution to append compression type but still respect user input
        verbose: false
@@ -27,17 +27,17 @@ def self.parse(args)
         opts.separator "Specific options:"
 
       # Cast 'target' argument to a  object.
-        opts.on("-t TARGET", "--target", "Backup target(PATH must be absolute") do |target| 
+        opts.on("-t", "--target TARGET", "Backup target(PATH must be absolute") do |target| 
             options[:target] = target
         end
 
       # Cast 'dest' argument to a  object.
-        opts.on("-d DESTINATION", "--dest", "Backup Destination") do |dest|
+        opts.on("-d", "--dest [DESTINATION]", "Backup Destination") do |dest|
             options[:dest] = dest
         end
 
       # Cast 'name' argument to a  object.
-        opts.on("-n NAME", "--name", "Backup name") do |name|
+        opts.on("-n", "--name [NAME]", "Backup name") do |name|
             options[:name] = name
         end
 
@@ -45,7 +45,7 @@ def self.parse(args)
       # and CODE_ALIASES - notice the latter is a Hash), and the user may provide
       # the shortest unambiguous text.
         code_list = (CODE_ALIASES.keys + CODES).join(',')
-        opts.on("-c CODE", "--code CODE", CODES, CODE_ALIASES, "Select Compression", "  (#{code_list})") do |compression|
+        opts.on("-c", "--code [CODE]", CODES, CODE_ALIASES, "Select Compression", "  (#{code_list})") do |compression|
             options[:compression] = compression
 
             switch = nil
@@ -80,8 +80,23 @@ def self.parse(args)
             exit
         end
     end
-
-    opts.parse!(args)
+   begin
+    opts.parse!
+   #raise OptionParser::MissingArgument if options[:target].nil?
+    mandatory = [:target]                                      
+    missing = mandatory.select{ |param| options[param].nil? }   
+    unless missing.empty?                                        
+        puts "Missing options: #{missing.join(', ')}"
+        puts ""
+        puts opts                                     
+        exit                                           
+    end                                                 
+   rescue OptionParser::InvalidOption, OptionParser::MissingArgument  
+        puts $!.to_s                                                           # Friendly output when parsing fails
+        puts opts                                               
+        exit                                                        
+   end    
+    
     options
 
 end  # parse
