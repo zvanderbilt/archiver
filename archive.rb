@@ -96,11 +96,12 @@ begin
     puts "Hello, #{options[:target]} shall be Archived to #{options[:dest]} as #{options[:name]}.tar.#{options[:compression]} " 
     puts "using the following compression type: #{options[:compression]}"
     sleep 2
+    tarballed_name = "#{options[:name]}.tar.#{options[:compression]}"
     puts "Compressing!"
-    `tar cvf#{options[:switch]} #{options[:name]} #{options[:target]}`
-	`mv #{options[:name]} #{options[:dest]}`
+    `tar cvf#{options[:switch]} #{tarballed_name} #{options[:target]}`
+    `mv #{tarballed_name} #{options[:dest]}`
     sleep 2
-    deflated = "#{options[:dest]}#{options[:name]}"
+    deflated = "#{options[:dest]}#{tarballed_name}"
     puts "Finished! Checking if #{deflated} exists..."
     thetruth = File.exists?("#{deflated}")
     puts "The existence of #{deflated} is #{thetruth}"    
