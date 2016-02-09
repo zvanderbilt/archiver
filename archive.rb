@@ -7,17 +7,15 @@ class Archiver
 
 Version = 1.0
 
-  CODES = %w[gzip bzip2 lzma zip]
-  CODE_ALIASES = { "gz" => "gzip", "bz2" => "bzip2", "xz" => "lzma" }
+  CODES = %w[gz bz2 xz]
+  CODE_ALIASES = { "gzip" => "gz", "bzip2" => "bz2", "lzma" => "xz" }
 
 def self.parse(args)
     # The options specified on the command line will be collected in *options*.
     # We set default values here.
     options = { 
        compression: "gz", 
-     #  target: Dir.pwd + "/nil", 
        dest: "~/",
-       name: "backup.tar.compressed", # canned name, come up with better solution to append compression type but still respect user input
        verbose: false
        }
 
@@ -104,21 +102,24 @@ end  # class
 
 begin
     options = Archiver.parse(ARGV)
-    pp options
+    options
 
-    puts "Current working directory is #{Dir.pwd}"
-#    puts options[:target], options[:dest], options[:name], options[:compression], options[:switch]
-    puts "Hello, #{options[:target]} shall be Archived to #{options[:dest]} as #{options[:name]}.tar.#{options[:compression]} " 
-    puts "using the following compression type: #{options[:compression]}"
+    if options[:name].nil? 
+        options[:name] = File.basename("#{options[:target]}")
+    end
+
+    puts "Hello, #{options[:target]} shall be Archived to #{options[:dest]} as #{options[:name]}.tar.#{options[:compression]} using the following compression type: #{options[:compression]}"
     sleep 2
+
     tarballed_name = "#{options[:name]}.tar.#{options[:compression]}"
+    
     puts "Compressing!"
     `tar cvf#{options[:switch]} #{tarballed_name} #{options[:target]}`
     `mv #{tarballed_name} #{options[:dest]}`
     sleep 2
     deflated = "#{options[:dest]}#{tarballed_name}"
     puts "Finished! Checking if #{deflated} exists..."
-    thetruth = File.exists?("#{deflated}")
+    thetruth = File.exists?(File.expand_path(deflated))
     puts "The existence of #{deflated} is #{thetruth}"    
     puts `file #{deflated}`
 
