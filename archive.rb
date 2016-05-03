@@ -134,28 +134,23 @@ begin
 
     wpconfigs = Array.new()
         Find.find(@options[:target]) do |path|
-        wpconfigs << path if path =~ /(wp|local)\-config\.php$/
-    end
+        	wpconfigs << path if path =~ /(wp|local)\-config\.php$/
+    	end
 
-    wpconfigs.each do |file|
-        if file =~ /(bak|Bak|repo|archive|Backup|html[\w|\-|\.])/
-            next	
-        end
-		name, user, pass, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
-		sitename = get_site_name(name, user, pass, host)
-		`mysqldump --opt -u#{user} -p#{pass} -h#{host} #{name} > #{@options[:dest]}#{sitename}.sql`
-		@backup_sql = "#{sitename}.sql"
-		@backup_target = File.dirname(file)
-		@backup_parent = File.dirname(@backup_target)
-		puts "where am i? right here silly, heres what you are loooking at: #{Dir.pwd}"
-		compressor(options,sitename)
-	end
+		wpconfigs.each do |file|
+			if file =~ /(bak|Bak|repo|archive|Backup|html[\w|\-|\.])/
+				next	
+			end
+			name, user, pass, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
+			sitename = get_site_name(name, user, pass, host)
+			`mysqldump --opt -u#{user} -p#{pass} -h#{host} #{name} > #{@options[:dest]}#{sitename}.sql`
+			@backup_sql = "#{sitename}.sql"
+			@backup_target = File.basename(File.dirname(file))
+			@backup_parent = File.dirname(File.dirname(file))
+			compressor(options,sitename)
+		end
 
 
-    puts "Finished! Checking if #{@options[:dest]}#{@backup_sql} exists..."
-    thetruth = File.exist?(File.expand_path("#{@options[:dest]}#{@backup_sql}"))
-    puts "The existence of #{@backup_sql} is #{thetruth}"    
-    puts `file #{@options[:dest]}#{@backup_sql}`
 rescue => e
     puts e
 end
@@ -180,14 +175,21 @@ begin
 	tarballed_name = "#{sitename}.tar.#{@options[:compression]}"
 
 	puts "Compressing!"
+	Dir.chdir(@options[:dest])
 	`tar cvf#{@options[:switch]} #{tarballed_name} -C #{@options[:dest]} #{@backup_sql} -C #{@backup_parent} #{@backup_target}` 
 
-	`mv #{tarballed_name} #{@options[:dest]}`
-	sleep 2
+	puts "Finished! Checking if #{@options[:dest]}#{@backup_sql} exists..."
+	thetruth_sql = File.exist?(File.expand_path("#{@options[:dest]}#{@backup_sql}"))
+	puts "The existence of #{@backup_sql} is #{thetruth_sql}"    
+	puts "Deleting #{@options[:dest]}#{@backup_sql}..." 
+	File.delete(@backup_sql)
+	thenewtruth = File.exist?(File.expand_path("#{@options[:dest]}#{@backup_sql}"))
+	puts "The existence of #{@backup_sql} is #{thenewtruth}"
+
 	deflated = "#{@options[:dest]}#{tarballed_name}"
 	puts "Finished! Checking if #{deflated} exists..."
-	thetruth = File.exist?(File.expand_path(deflated))
-	puts "The existence of #{deflated} is #{thetruth}"
+	thetruth_tar = File.exist?(File.expand_path(deflated))
+	puts "The existence of #{deflated} is #{thetruth_tar}"
 	puts `file #{deflated}`
 rescue => e
 	puts e
