@@ -2,8 +2,10 @@
 
 require 'optparse'
 require 'pp'
+require 'find'
+require 'mysql'
 
-class Archiver
+class Opts
 
 Version = 1.0
 
@@ -15,8 +17,9 @@ def self.parse(args)
     # We set default values here.
     options = { 
        compression: "gz", 
-       dest: "~/",
-       verbose: false
+       dest: "/tmp/",
+       verbose: false,
+	   target: "./"
        }
 
     opts = OptionParser.new do |opts|
@@ -100,28 +103,105 @@ def self.parse(args)
 end  # parse
 end  # class
 
-begin
-    options = Archiver.parse(ARGV)
-    options
+class Archiver
 
-    if options[:name].nil? 
-        options[:name] = File.basename("#{options[:target]}")
+## Initialize options ##
+def initialize(options)
+	@options = options 
+	@target = @options[:target]
+    @dest = @options[:dest] 
+end
+
+def wp_found(options)
+begin
+    puts "Hello, #{@options[:target]} shall be searched to find WP installations..."
+    
+#    wpdirs = Array.new()
+#        Find.find(@target) do |path|
+#			wpconfigs = File.join("#{@target}", "**", '{wp,local}-config.php')
+#			Dir.glob(wpconfigs) do |file|
+#        		wpdirs << file if file != /(bak|Bak|repo|archive|Backup|html[\w|\-|\.])/
+#        	end
+#    	end
+
+#	puts wpdirs
+#
+#    wpdirs.each do |file|
+#		name, user, password, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
+#        `mysqldump --opt -u#{user} -p#{pass} -h#{host} #{name} > #{@options[:dest]}#{@options[:name]}`
+#        compressor
+#    end
+
+    wpconfigs = Array.new()
+        Find.find(@options[:target]) do |path|
+        wpconfigs << path if path =~ /(wp|local)\-config\.php$/
     end
 
-    puts "Hello, #{options[:target]} shall be Archived to #{options[:dest]} as #{options[:name]}.tar.#{options[:compression]} using the following compression type: #{options[:compression]}"
-    sleep 2
+    wpconfigs.each do |file|
+        if file =~ /(bak|Bak|repo|archive|Backup|html[\w|\-|\.])/
+            next	
+        end
+		name, user, pass, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
+		sitename = get_site_name(name, user, pass, host)
+		`mysqldump --opt -u#{user} -p#{pass} -h#{host} #{name} > #{@options[:dest]}#{sitename}.sql`
+		@backup_sql = "#{sitename}.sql"
+		@backup_target = File.dirname(file)
+		@backup_parent = File.dirname(@backup_target)
+		puts "where am i? right here silly, heres what you are loooking at: #{Dir.pwd}"
+		compressor(options,sitename)
+	end
 
-    tarballed_name = "#{options[:name]}.tar.#{options[:compression]}"
-    
-    puts "Compressing!"
-    `tar cvf#{options[:switch]} #{tarballed_name} #{options[:target]}`
-    `mv #{tarballed_name} #{options[:dest]}`
-    sleep 2
-    deflated = "#{options[:dest]}#{tarballed_name}"
-    puts "Finished! Checking if #{deflated} exists..."
-    thetruth = File.exists?(File.expand_path(deflated))
-    puts "The existence of #{deflated} is #{thetruth}"    
-    puts `file #{deflated}`
+
+    puts "Finished! Checking if #{@options[:dest]}#{@backup_sql} exists..."
+    thetruth = File.exist?(File.expand_path("#{@options[:dest]}#{@backup_sql}"))
+    puts "The existence of #{@backup_sql} is #{thetruth}"    
+    puts `file #{@options[:dest]}#{@backup_sql}`
+rescue => e
+    puts e
+end
+
+end # def
+
+def get_site_name(db_name, db_user, db_pass, db_host)
+    begin
+    con = Mysql.new("#{db_host}", "#{db_user}", "#{db_pass}", "#{db_name}")
+    rs = con.query('SELECT option_value FROM wp_options WHERE option_id = 3')
+    return rs.fetch_row[0]
+
+    rescue => e
+        puts e
+    end
+ensure
+    con.close if con
+end
+
+def compressor(options,sitename)
+begin
+	tarballed_name = "#{sitename}.tar.#{@options[:compression]}"
+
+	puts "Compressing!"
+	`tar cvf#{@options[:switch]} #{tarballed_name} -C #{@options[:dest]} #{@backup_sql} -C #{@backup_parent} #{@backup_target}` 
+
+	`mv #{tarballed_name} #{@options[:dest]}`
+	sleep 2
+	deflated = "#{@options[:dest]}#{tarballed_name}"
+	puts "Finished! Checking if #{deflated} exists..."
+	thetruth = File.exist?(File.expand_path(deflated))
+	puts "The existence of #{deflated} is #{thetruth}"
+	puts `file #{deflated}`
+rescue => e
+	puts e
+end
+end # def
+
+end # class
+
+### PARSE ###
+
+begin
+    options = Opts.parse(ARGV)
+
+	Archiver.new(options).wp_found(options)
 
 rescue => e
     puts e
