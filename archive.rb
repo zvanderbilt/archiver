@@ -157,7 +157,7 @@ end # def
 
 def get_site_name(db_name, db_user, db_pass, db_host)
     begin
-    con = Mysql.new("#{db_host}", "#{db_user}", "#{db_pass}", "#{db_name}")
+    con = Mysql.new(db_host, db_user, db_pass}, db_name)
     rs = con.query('SHOW TABLES LIKE "%_options"')
     options_name = rs.fetch_row[0]
     
