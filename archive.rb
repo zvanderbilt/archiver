@@ -172,7 +172,7 @@ def compressor(options,sitename)
 begin
 	tarballed_name = "#{sitename}.tar.#{@options[:compression]}"
 
-	puts "Compressing! with the following algorithm: #{@options[:switch]}"
+	puts "Compressing! with the following algorithm: #{@options[:compression]}"
 	Dir.chdir(@options[:dest])
 	`tar c#{@options[:switch]}vf #{tarballed_name} #{@backup_sql} -C #{@backup_parent} #{@backup_target}` 
 
