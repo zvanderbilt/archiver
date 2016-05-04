@@ -161,7 +161,7 @@ def get_site_name(db_name, db_user, db_pass, db_host)
     begin
     con = Mysql.new("#{db_host}", "#{db_user}", "#{db_pass}", "#{db_name}")
     rs = con.query('SELECT option_value FROM wp_options WHERE option_id = 3')
-    return rs.fetch_row[0]
+    return rs.fetch_row[0].delete(' ')
 
     rescue => e
         puts e
