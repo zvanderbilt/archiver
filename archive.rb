@@ -143,8 +143,9 @@ begin
 			end
 			name, user, pass, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
 			sitename = get_site_name(name, user, pass, host)
-			`mysqldump --opt -u#{user} -p#{pass} -h#{host} #{name} > #{@options[:dest]}#{sitename}.sql`
-			@backup_sql = "#{sitename}.sql"
+			fixed_sitename = "#{sitename}".delete(' ')
+			`mysqldump --opt -u#{user} -p#{pass} -h#{host} #{name} > #{@options[:dest]}#{fixed_sitename}.sql`
+			@backup_sql = "#{fixed_sitename}.sql"
 			@backup_target = File.basename(File.dirname(file))
 			@backup_parent = File.dirname(File.dirname(file))
 			compressor(options,sitename)
@@ -161,7 +162,7 @@ def get_site_name(db_name, db_user, db_pass, db_host)
     begin
     con = Mysql.new("#{db_host}", "#{db_user}", "#{db_pass}", "#{db_name}")
     rs = con.query('SELECT option_value FROM wp_options WHERE option_id = 3')
-    return rs.fetch_row[0].delete(' ')
+    return rs.fetch_row[0]
 
     rescue => e
         puts e
@@ -170,9 +171,9 @@ ensure
     con.close if con
 end
 
-def compressor(options,sitename)
+def compressor(options,fixed_sitename)
 begin
-	tarballed_name = "#{sitename}.tar.#{@options[:compression]}"
+	tarballed_name = "#{fixed_sitename}.tar.#{@options[:compression]}"
 
 	puts "Compressing!"
 	Dir.chdir(@options[:dest])
