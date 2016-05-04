@@ -169,11 +169,6 @@ def get_site_name(db_name, db_user, db_pass, db_host)
 ensure
     con.close if con
 end
-def strip_url(target_url)
-  target_url.gsub("http://", "")
-            .gsub("https://", "")
-            .gsub("www.", "")
-end
 
 def compressor(options,sitename)
 begin
