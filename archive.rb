@@ -160,14 +160,19 @@ end # def
 def get_site_name(db_name, db_user, db_pass, db_host)
     begin
     con = Mysql.new("#{db_host}", "#{db_user}", "#{db_pass}", "#{db_name}")
-    rs = con.query('SELECT option_value FROM wp_options WHERE option_id = 3')
-    return rs.fetch_row[0].delete(' ')
+    rs = con.query('SELECT option_value FROM wp_options WHERE option_id = 1')
+    return rs.fetch_row[0].gsub(/^https?\:\/\/(www.)?/,'')
 
     rescue => e
         puts e
     end
 ensure
     con.close if con
+end
+def strip_url(target_url)
+  target_url.gsub("http://", "")
+            .gsub("https://", "")
+            .gsub("www.", "")
 end
 
 def compressor(options,sitename)
