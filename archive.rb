@@ -18,8 +18,8 @@ def self.parse(args)
     options = { 
        compression: "gz", 
        dest: "/tmp/",
-       verbose: false,
-	   target: "./"
+	   target: "./",
+	   switch: "z",
        }
 
     opts = OptionParser.new do |opts|
@@ -48,8 +48,6 @@ def self.parse(args)
         code_list = (CODE_ALIASES.keys + CODES).join(',')
         opts.on("-c", "--code [CODE]", CODES, CODE_ALIASES, "Select Compression", "  (#{code_list})") do |compression|
             options[:compression] = compression
-
-            switch = nil
 
             if compression == "gzip"
                 switch = "z"
@@ -174,9 +172,9 @@ def compressor(options,sitename)
 begin
 	tarballed_name = "#{sitename}.tar.#{@options[:compression]}"
 
-	puts "Compressing!"
+	puts "Compressing! with the following algorithm: #{@options[:switch]}"
 	Dir.chdir(@options[:dest])
-	`tar cvf#{@options[:switch]} #{tarballed_name} -C #{@options[:dest]} #{@backup_sql} -C #{@backup_parent} #{@backup_target}` 
+	`tar c#{@options[:switch]}vf #{tarballed_name} #{@backup_sql} -C #{@backup_parent} #{@backup_target}` 
 
 	puts "Finished! Checking if #{@options[:dest]}#{@backup_sql} exists..."
 	thetruth_sql = File.exist?(File.expand_path("#{@options[:dest]}#{@backup_sql}"))
