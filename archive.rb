@@ -132,11 +132,11 @@ begin
 
     wpconfigs = Array.new()
         Find.find(@options[:target]) do |path|
-        	wpconfigs << path if path =~ /(wp|local)\-config\.php$/
+        	wpconfigs << path if path =~ /\/(\bhtml\b|\bwp\b)\/(wp|local)\-config\.php$/
     	end
 
 		wpconfigs.each do |file|
-			if file =~ /(bak|Bak|repo|archive|Archive|Backup|html[\w|\-|\.|\_])/
+			if file =~ /(bak|Bak|repo|archive|Archive|Backup|safe|html\.|html\_|html\-)/
 				next	
 			end
 			name, user, password, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
