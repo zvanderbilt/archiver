@@ -28,7 +28,7 @@ def self.parse(args)
         opts.separator "Specific options:"
 
       # Cast 'target' argument to a  object.
-        opts.on("-t", "--target TARGET", "Backup target(PATH must be absolute") do |target| 
+        opts.on("-t", "--target TARGET", "Backup target(PATH must be absolute)") do |target| 
             options[:target] = target
         end
 
@@ -114,29 +114,13 @@ def wp_found(options)
 begin
     puts "Hello, #{@options[:target]} shall be searched to find WP installations..."
     
-#    wpdirs = Array.new()
-#        Find.find(@target) do |path|
-#			wpconfigs = File.join("#{@target}", "**", '{wp,local}-config.php')
-#			Dir.glob(wpconfigs) do |file|
-#        		wpdirs << file if file != /(bak|Bak|repo|archive|Backup|html[\w|\-|\.])/
-#        	end
-#    	end
-
-#	puts wpdirs
-#
-#    wpdirs.each do |file|
-#		name, user, password, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
-#        `mysqldump --opt -u#{user} -p#{pass} -h#{host} #{name} > #{@options[:dest]}#{@options[:name]}`
-#        compressor
-#    end
-
     wpconfigs = Array.new()
         Find.find(@options[:target]) do |path|
         	wpconfigs << path if path =~ /(wp|local)\-config\.php$/
     	end
 
 		wpconfigs.each do |file|
-			if file =~ /(bak|Bak|repo|archive|Archive|Backup|html[\w|\-|\.|\_])/
+			if file =~ /(bak|Bak|repo|archive|Archive|Backup|safe|db|html[\-|\.|\_])/
 				next	
 			end
 			name, user, password, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
