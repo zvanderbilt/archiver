@@ -42,9 +42,6 @@ def self.parse(args)
             options[:name] = name
         end
 
-      # Keyword completion.  We are specifying a specific set of arguments (CODES
-      # and CODE_ALIASES - notice the latter is a Hash), and the user may provide
-      # the shortest unambiguous text.
         code_list = (CODE_ALIASES.keys + CODES).join(',')
         opts.on("-c", "--code [CODE]", CODES, CODE_ALIASES, "Select Compression", "  (#{code_list})") do |compression|
             options[:compression] = compression
@@ -60,7 +57,6 @@ def self.parse(args)
             options[:switch] = switch
         end
 
-        # Boolean switch.
         opts.on("-v", "--[no-]verbose", "Run verbosely") do |v|
             options[:verbose] = v
         end
@@ -68,7 +64,6 @@ def self.parse(args)
         opts.separator ""
         opts.separator "Common options:"
 
-        # No argument, shows at tail.  This will print an options summary.
         opts.on_tail("-h", "--help", "Show this message") do
             puts opts
             exit
@@ -81,7 +76,6 @@ def self.parse(args)
     end
    begin
     opts.parse!
-   #raise OptionParser::MissingArgument if options[:target].nil?
     mandatory = [:target]                                      
     missing = mandatory.select{ |param| options[param].nil? }   
     unless missing.empty?                                        
@@ -116,15 +110,11 @@ begin
     
     wpconfigs = Array.new()
         Find.find(@options[:target]) do |path|
-        	wpconfigs << path if path =~ /\/(\bhtml\b|\bwp\b)\/(wp|local)\-config\.php$/
+        	wpconfigs << path if path =~ /\/(wp|local)\-config\.php$/
     	end
 
 		wpconfigs.each do |file|
-<<<<<<< HEAD
 			if file =~ /(bak|Bak|repo|archive|Archive|Backup|safe|db|html[\-|\.|\_])/
-=======
-			if file =~ /(bak|Bak|repo|archive|Archive|Backup|safe|html\.|html\_|html\-)/
->>>>>>> bbaf8728a30e01b26884caecd97e9067c4bdb606
 				next	
 			end
 			name, user, password, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
