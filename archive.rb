@@ -116,11 +116,15 @@ begin
     
     wpconfigs = Array.new()
         Find.find(@options[:target]) do |path|
-        	wpconfigs << path if path =~ /(wp|local)\-config\.php$/
+        	wpconfigs << path if path =~ /\/(\bhtml\b|\bwp\b)\/(wp|local)\-config\.php$/
     	end
 
 		wpconfigs.each do |file|
+<<<<<<< HEAD
 			if file =~ /(bak|Bak|repo|archive|Archive|Backup|safe|db|html[\-|\.|\_])/
+=======
+			if file =~ /(bak|Bak|repo|archive|Archive|Backup|safe|html\.|html\_|html\-)/
+>>>>>>> bbaf8728a30e01b26884caecd97e9067c4bdb606
 				next	
 			end
 			name, user, password, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
@@ -141,8 +145,11 @@ end # def
 
 def get_site_name(db_name, db_user, db_pass, db_host)
     begin
-    con = Mysql.new("#{db_host}", "#{db_user}", "#{db_pass}", "#{db_name}")
-    rs = con.query('SELECT option_value FROM wp_options WHERE option_id = 1')
+    con = Mysql.new(db_host, db_user, db_pass, db_name)
+    rs = con.query('SHOW TABLES LIKE "%_options"')
+    options_name = rs.fetch_row[0]
+    
+    rs = con.query("SELECT option_value FROM #{options_name} WHERE option_id = 1")
     return rs.fetch_row[0].gsub(/^https?\:\/\/(www.)?/,'')
 
     rescue => e
