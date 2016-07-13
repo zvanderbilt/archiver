@@ -3,13 +3,14 @@
 require 'optparse'
 require 'pp'
 require 'find'
-require 'mysql'
+require 'wpcli'
+require 'uri'
 
 class Opts
 
 Version = 1.0
 
-  CODES = %w[gz bz2 xz]
+  CODES = %w[gz bz2 xz lzma]
   CODE_ALIASES = { "gzip" => "gz", "bzip2" => "bz2", "lzma" => "xz" }
 
 def self.parse(args)
@@ -105,53 +106,39 @@ def initialize(options)
 end
 
 def wp_found(options)
-begin
-    puts "Hello, #{@options[:target]} shall be searched to find WP installations..."
-    
-    wpconfigs = Array.new()
-        Find.find(@options[:target]) do |path|
-        	wpconfigs << path if path =~ /\/(wp|local)\-config\.php$/
-    	end
-
-		wpconfigs.each do |file|
-			if file =~ /(bak|Bak|repo|archive|Archive|Backup|safe|db|html[\-|\.|\_])/
-				next	
-			end
-			name, user, password, host = File.read(file).scan(/'DB_[NAME|USER|PASSWORD|HOST]+'\, '(.*?)'/).flatten
-			sitename = get_site_name(name, user, password, host)
-			`mysqldump --opt -u#{user} -p#{password} -h#{host} #{name} > #{@options[:dest]}#{sitename}.sql`
-			@backup_sql = "#{sitename}.sql"
-			@backup_target = File.basename(File.dirname(file))
-			@backup_parent = File.dirname(File.dirname(file))
-			compressor(options,sitename)
+	begin
+		puts "Hello, #{@options[:target]} shall be searched to find WP installations..."
+		Dir.chdir(@target)
+		wpconfigs = Array.new()
+		Find.find(@options[:target]) do |path|
+			wpconfigs << path if path =~ /\/(wp|local)\-config\.php$/
 		end
 
-
-rescue => e
-    puts e
-end
-
+		wpconfigs.each do |file|
+			if file =~ /(bak|repo|archive|backup|safe|db|html\w|html\.)/
+				next	
+			end
+			@wpcli = Wpcli::Client.new File.dirname(file)
+			puts "Backing up..." 
+			ugly_site_name = @wpcli.run "option get siteurl --allow-root"
+			better_site_name = ugly_site_name.to_s.match(URI.regexp)
+			site_name = better_site_name.to_s.sub(/^https?\:\/\//, '').sub(/^www./,'')
+			puts site_name
+			export_sql = @wpcli.run "db export #{site_name}.sql --allow-root"
+			export_sql
+			@backup_sql = "#{site_name}.sql"
+			@backup_target = File.basename(File.dirname(file))
+			@backup_parent = File.dirname(File.dirname(file))
+			compressor(options,site_name)
+		end
+	rescue => e
+		puts e
+	end
 end # def
 
-def get_site_name(db_name, db_user, db_pass, db_host)
-    begin
-    con = Mysql.new(db_host, db_user, db_pass, db_name)
-    rs = con.query('SHOW TABLES LIKE "%_options"')
-    options_name = rs.fetch_row[0]
-    
-    rs = con.query("SELECT option_value FROM #{options_name} WHERE option_id = 1")
-    return rs.fetch_row[0].gsub(/^https?\:\/\/(www.)?/,'')
-
-    rescue => e
-        puts e
-    end
-ensure
-    con.close if con
-end
-
-def compressor(options,sitename)
+def compressor(options,site_name)
 begin
-	tarballed_name = "#{sitename}.tar.#{@options[:compression]}"
+	tarballed_name = "#{site_name}.tar.#{@options[:compression]}"
 
 	puts "Compressing! with the following algorithm: #{@options[:compression]}"
 	Dir.chdir(@options[:dest])
