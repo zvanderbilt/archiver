@@ -121,8 +121,7 @@ def wp_found(options)
 			@wpcli = Wpcli::Client.new File.dirname(file)
 			puts "Backing up..." 
 			ugly_site_name = @wpcli.run "option get siteurl --allow-root"
-			better_site_name = ugly_site_name.to_s.match(URI.regexp)
-			site_name = better_site_name.to_s.sub(/^https?\:\/\//, '').sub(/^www./,'')
+			site_name = ugly_site_name.to_s.match(URI.regexp).to_s.sub(/^https?\:\/\//, '').sub(/^www./,'')
 			puts site_name
 			export_sql = @wpcli.run "db export #{site_name}.sql --allow-root"
 			export_sql
